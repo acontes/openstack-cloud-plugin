@@ -122,9 +122,18 @@ public class Openstack {
             //If not it is assumed that it is being used API V3
             Identifier iDomain = Identifier.byName(domain);
             Identifier project = Identifier.byName(tenant);
+
+            Identifier pDomain = iDomain;
+            String[] fullTenant =  tenant.split("\\\\",2);
+            if (fullTenant.length > 1) {
+                pDomain = Identifier.byName(fullTenant[0]);
+                project = Identifier.byName(fullTenant[1]);
+            }
+
+
             builder = OSFactory.builderV3().endpoint(endPointUrl)
                      .credentials(username, credential.getPlainText(), iDomain)
-                     .scopeToProject(project, iDomain);
+                     .scopeToProject(project, pDomain);
         }
         OSClient client = builder
                 .authenticate()
