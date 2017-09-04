@@ -62,7 +62,7 @@ public class JCloudsCloud extends Cloud implements SlaveOptions.Holder {
     private static final Logger LOGGER = Logger.getLogger(JCloudsCloud.class.getName());
 
     public final @Nonnull String endPointUrl;
-    public final @Nonnull String identity;
+    public /*final*/ @Nonnull String identity;
     public final @Nonnull Secret credential;
     // OpenStack4j requires null when there is no zone configured
     public final @CheckForNull String zone;
@@ -143,6 +143,18 @@ public class JCloudsCloud extends Cloud implements SlaveOptions.Holder {
         }
 
         injectReferenceIntoTemplates();
+
+        if (identity != null) {
+            String[] id = identity.split(":");
+            if (id.length == 3) {
+                // convert the former identity string PROJECT_NAME:USER_NAME:DOMAIN_NAME
+                // to the new one PROJECT_NAME:PROJECT_DOMAIN:USER_NAME:USER_DOMAIN_NAME
+                String project = id[0];
+                String username = id[1];
+                String domain = id[2];
+                identity = String.format("%s:%s:%s:%s",project,domain,username,domain);
+            }
+        }
 
         return this;
     }

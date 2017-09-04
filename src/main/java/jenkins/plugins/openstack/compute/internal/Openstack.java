@@ -114,23 +114,32 @@ public class Openstack {
 
     private Openstack(@Nonnull String endPointUrl, @Nonnull String identity, @Nonnull Secret credential, @CheckForNull String region) {
         // TODO refactor to split tenant:username everywhere including UI
-        String[] id = identity.split(":", 3);
-        String tenant = id.length > 0 ? id[0] : "";
-        String username = id.length > 1 ? id[1] : "";
-        String domain = id.length > 2 ? id[2] : "";
-        final IOSClientBuilder<? extends OSClient<?>, ?> builder;
-        if (domain.equals("")) {
-            //If domain is empty it is assumed that is being used API V2
+        String[] id = identity.split(":");
+        final IOSClientBuilder<? extends OSClient, ?> builder;
+        if (id.length == 2) {
+            //If id.length == 2, it is assumed that is being used API V2
+            String tenant = id.length > 0 ? id[0] : "";
+            String username = id.length > 1 ? id[1] : "";
+
             builder = OSFactory.builderV2().endpoint(endPointUrl)
                      .credentials(username, credential.getPlainText())
                      .tenantName(tenant);
         } else {
             //If not it is assumed that it is being used API V3
-            Identifier iDomain = Identifier.byName(domain);
-            Identifier project = Identifier.byName(tenant);
+
+            String projectName = id.length > 0 ? id[0] : "";
+            String projectDomain = id.length > 1 ? id[1] : "";
+            String userName = id.length > 2 ? id[2] : "";
+            String userDomain = id.length > 3 ? id[3] : "";
+
+
+            Identifier projectDomainIdentifier = Identifier.byName(projectDomain);
+            Identifier projectNameIdentifier = Identifier.byName(projectName);
+            Identifier userDomainIdentifier = Identifier.byName(userDomain);
+
             builder = OSFactory.builderV3().endpoint(endPointUrl)
-                     .credentials(username, credential.getPlainText(), iDomain)
-                     .scopeToProject(project, iDomain);
+                     .credentials(userName, credential.getPlainText(), userDomainIdentifier)
+                     .scopeToProject(projectNameIdentifier, projectDomainIdentifier);
         }
         OSClient<?> client = builder
                 .authenticate()
